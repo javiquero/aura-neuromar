@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Enquesta de preferències</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap">
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bk:#060608;--s1:#0c0c10;--card:#101016;--brd:#1e1e28;
+  --wh:#f0efeb;--off:#9090a0;--mut:#404048;
+  --gold:#c9a257;--gold2:#e8c078;--red:#c0392b;--grn:#22a06b;
+  --fd:'Cormorant Garamond',Georgia,serif;
+  --fb:'Jost','Helvetica Neue',sans-serif;
+}
+html,body{height:100%}
+body{font-family:var(--fb);background:var(--bk);color:var(--wh);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+@keyframes fin{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes rowin{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+@keyframes barfill{from{width:0}to{width:var(--w)}}
+
+.topbar{height:46px;background:rgba(6,6,8,.98);border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;padding:0 36px;position:fixed;top:0;left:0;right:0;z-index:100}
+.logo{font-family:var(--fd);font-size:18px;letter-spacing:7px;font-weight:300}
+.prog-wrap{display:flex;align-items:center;gap:12px}
+.prog-label{font-size:9px;letter-spacing:2px;color:var(--off);text-transform:uppercase}
+.prog-dots{display:flex;gap:5px}
+.pdot{width:20px;height:2px;background:var(--mut);transition:background .4s}
+.pdot.done{background:var(--gold)}
+.pdot.active{background:var(--gold2)}
+
+.screen{min-height:100vh;padding:80px 36px 60px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.inner{width:100%;max-width:720px}
+
+.intro-eyebrow{font-size:9px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:24px;animation:fin .7s ease .1s both}
+.intro-h1{font-family:var(--fd);font-size:clamp(2.2rem,5vw,3.8rem);font-weight:300;line-height:1.1;margin-bottom:20px;animation:fin .7s ease .25s both}
+.intro-h1 em{font-style:italic;color:var(--gold)}
+.intro-sub{font-size:13px;color:var(--off);line-height:1.85;max-width:500px;margin-bottom:40px;animation:fin .7s ease .4s both;font-weight:300}
+.intro-note{font-size:10px;color:var(--mut);letter-spacing:1px;margin-top:16px;animation:fin .7s ease .7s both}
+
+.step-meta{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.step-q{font-family:var(--fd);font-size:clamp(1.4rem,3vw,2.2rem);font-weight:300;line-height:1.25;margin-bottom:8px}
+.step-hint{font-size:12px;color:var(--off);margin-bottom:36px;line-height:1.6;font-weight:300}
+
+.opts{display:grid;gap:3px}
+.opts-2{grid-template-columns:1fr 1fr}
+.opts-3{grid-template-columns:1fr 1fr 1fr}
+.opt{border:1px solid var(--brd);padding:24px;cursor:pointer;transition:all .2s;position:relative;background:var(--card);user-select:none}
+.opt:hover{border-color:#383848;background:#131320}
+.opt.selected{border-color:var(--gold)!important;background:rgba(201,162,87,.06)!important}
+.opt.selected::after{content:'✓';position:absolute;top:14px;right:16px;color:var(--gold);font-size:13px}
+.opt-tag{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+.opt-text{font-size:13px;color:var(--off);line-height:1.75;font-weight:300}
+.opt-big{font-size:17px;margin-bottom:6px;font-weight:300}
+
+.pcard-wrap{border:1px solid var(--brd);overflow:hidden;cursor:pointer;transition:all .2s;background:var(--card);user-select:none;position:relative}
+.pcard-wrap:hover{border-color:#383848}
+.pcard-wrap.selected{border-color:var(--gold)!important;background:rgba(201,162,87,.05)!important}
+.pcheck{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;color:#000;font-weight:700;opacity:0;transition:opacity .2s;z-index:2}
+.pcard-wrap.selected .pcheck{opacity:1}
+.pimg{aspect-ratio:4/5;position:relative;background:linear-gradient(160deg,#0e0e1a,#181630);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.garment-s{width:80px;height:104px;position:relative}
+.garment-s::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(201,162,87,.2) 0%,rgba(201,162,87,.05) 100%);clip-path:polygon(28% 0%,72% 0%,88% 12%,100% 12%,100% 100%,0% 100%,0% 12%,12% 12%)}
+.garment-b::before{background:linear-gradient(180deg,rgba(90,100,200,.28) 0%,rgba(90,100,200,.07) 100%)}
+.pimg-badge{position:absolute;top:10px;left:10px;background:var(--gold);color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:3px 8px}
+.pdata{padding:16px}
+.pdata-name{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+.pdata-mat{font-size:10px;color:var(--mut);margin-bottom:10px}
+.social-block{border-top:1px solid var(--brd);padding-top:10px;margin-top:10px}
+.social-stars{color:var(--gold);font-size:11px}
+.social-count{font-size:10px;color:var(--mut);margin-left:5px}
+.social-badge{display:inline-block;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 7px;background:rgba(34,160,107,.15);color:var(--grn);border:1px solid rgba(34,160,107,.3);margin-top:6px}
+.price-row{display:flex;align-items:baseline;gap:8px;margin-top:8px}
+.price-was{font-size:12px;color:#2c2c38;text-decoration:line-through}
+.price-now{font-family:var(--fd);font-size:22px;color:var(--gold);font-weight:300}
+.price-disc{font-size:8px;font-weight:700;background:var(--red);color:#fff;padding:2px 6px}
+
+.cd-block{background:var(--s1);border:1px solid var(--brd);padding:20px 24px;margin-bottom:3px}
+.cd-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--off);margin-bottom:12px}
+.cd-units{display:flex;align-items:flex-start;gap:8px}
+.cdu{text-align:center}
+.cdu-num{font-family:var(--fd);font-size:32px;font-weight:300;letter-spacing:2px;display:block;line-height:1}
+.cdu-lbl{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin-top:4px}
+.cdsep{font-family:var(--fd);font-size:26px;color:var(--brd);line-height:42px}
+.stk-text{font-size:11px;color:var(--red);margin-bottom:6px;font-weight:500}
+.stk-bar{background:var(--brd);height:2px;margin-top:4px}
+.stk-fill{background:var(--gold);height:100%;width:7%}
+.fomo-product{border:1px solid var(--brd);padding:18px;background:var(--card);margin-bottom:3px}
+.fpname{font-family:var(--fd);font-size:20px;font-weight:300;margin-bottom:4px}
+.fpsub{font-size:11px;color:var(--mut);margin-bottom:14px}
+.viewers-row{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--mut);margin-top:10px}
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--grn);animation:pulse 1.8s ease-in-out infinite;flex-shrink:0}
+
+.palettes{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.pal-opt{cursor:pointer;overflow:hidden;border:2px solid transparent;transition:border-color .2s;user-select:none}
+.pal-opt:hover{border-color:#444}
+.pal-opt.selected{border-color:var(--gold)}
+.pal-preview{height:130px;display:flex;flex-direction:column;justify-content:flex-end;padding:16px}
+.pal-a{background:linear-gradient(135deg,#060608 0%,#14102a 100%)}
+.pal-b{background:linear-gradient(135deg,#f0ece4 0%,#e0d8cc 100%)}
+.pal-logo{font-family:var(--fd);letter-spacing:5px;font-weight:300;font-size:15px;margin-bottom:8px}
+.pal-logo-a{color:#c9a257}
+.pal-logo-b{color:#4a3a30}
+.pal-btn{display:inline-block;padding:6px 16px;font-size:8px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+.pal-btn-a{background:#c9a257;color:#000}
+.pal-btn-b{background:#4a3a30;color:#fff;font-weight:400}
+.pal-name{background:var(--card);border-top:1px solid var(--brd);padding:10px 14px;font-size:10px;letter-spacing:1px;color:var(--off);text-transform:uppercase}
+
+.btn-main{padding:14px 42px;background:var(--gold);color:#000;font-size:9px;letter-spacing:3px;text-transform:uppercase;border:none;cursor:pointer;font-weight:500;font-family:var(--fb);transition:all .25s}
+.btn-main:hover:not(:disabled){background:var(--gold2)}
+.btn-main:disabled{opacity:.4;cursor:not-allowed}
+.btn-sec{padding:12px 26px;background:transparent;border:1px solid var(--brd);color:var(--mut);font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:var(--fb);transition:all .2s}
+.btn-sec:hover{border-color:#444;color:var(--off)}
+.actions{display:flex;gap:12px;align-items:center;margin-top:32px}
+
+/* REVEAL */
+.reveal-wrap{min-height:100vh;padding:80px 36px 80px}
+.reveal-header{max-width:720px;margin:0 auto 50px}
+.rev-eyebrow{font-size:9px;letter-spacing:5px;text-transform:uppercase;color:var(--red);margin-bottom:18px;animation:fin .5s ease both}
+.rev-h1{font-family:var(--fd);font-size:clamp(2rem,4.5vw,3.2rem);font-weight:300;line-height:1.1;margin-bottom:14px;animation:fin .5s ease .1s both}
+.rev-h1 em{font-style:italic;color:var(--gold)}
+.rev-sub{font-size:13px;color:var(--off);line-height:1.85;font-weight:300;animation:fin .5s ease .2s both}
+.score-block{display:flex;align-items:center;gap:20px;margin:28px 0;padding:22px 26px;background:var(--s1);border:1px solid var(--brd);animation:fin .5s ease .3s both}
+.score-num{font-family:var(--fd);font-size:56px;font-weight:300;color:var(--gold);line-height:1}
+.score-of{font-size:11px;color:var(--mut);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase}
+.score-label{font-size:12px;color:var(--off);line-height:1.6;font-weight:300}
+.reveal-cards{max-width:720px;margin:0 auto}
+.rcard{border:1px solid var(--brd);margin-bottom:3px;overflow:hidden}
+.rcard-head{display:flex;align-items:center;gap:14px;padding:18px 22px;cursor:pointer;user-select:none}
+.ricn{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;font-weight:700;font-family:var(--fb)}
+.rcard-title{flex:1}
+.rcard-name{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:500}
+.rcard-sub{font-size:11px;color:var(--mut);margin-top:2px}
+.tag-inf{font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;background:rgba(192,57,43,.15);color:#e08080;border:1px solid rgba(192,57,43,.25)}
+.tag-neu{font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;background:rgba(255,255,255,.05);color:var(--mut);border:1px solid var(--brd)}
+.chev{font-size:10px;color:var(--mut);margin-left:8px;transition:transform .2s;flex-shrink:0}
+.chev.open{transform:rotate(180deg)}
+.rcard-body{padding:0 22px 22px;border-top:1px solid var(--brd)}
+.rb-your-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mut);margin:16px 0 6px}
+.rb-your-val{font-size:14px;color:var(--gold);font-style:italic;font-family:var(--fd)}
+.rb-explain{font-size:12px;color:var(--off);line-height:1.8;font-weight:300;margin-top:12px}
+.rb-bar-wrap{margin-top:14px}
+.rb-bar-lbl{font-size:9px;color:var(--mut);margin-bottom:5px;display:flex;justify-content:space-between}
+.rb-bar{background:var(--brd);height:3px;overflow:hidden}
+.rb-bar-fill{height:100%;animation:barfill .9s cubic-bezier(.25,1,.5,1) forwards;animation-delay:.5s}
+.rb-ref{font-size:10px;color:var(--mut);margin-top:6px;font-style:italic}
+.final-box{max-width:720px;margin:44px auto 0;border:1px solid var(--brd);padding:32px;text-align:center;animation:fin .5s ease .7s both}
+.fb-lbl{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--mut);margin-bottom:14px}
+.fb-txt{font-family:var(--fd);font-size:18px;color:var(--off);line-height:1.8;font-weight:300;font-style:italic}
+.restart-btn{margin-top:28px;padding:12px 28px;background:transparent;border:1px solid var(--brd);color:var(--mut);font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:var(--fb);transition:all .2s}
+.restart-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+.fade-enter-active,.fade-leave-active{transition:opacity .3s ease,transform .3s ease}
+.fade-enter-from{opacity:0;transform:translateY(18px)}
+.fade-leave-to{opacity:0;transform:translateY(-14px)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar" v-if="phase!=='reveal'">
+    <span class="logo">AURA</span>
+    <div class="prog-wrap" v-if="phase==='steps'">
+      <span class="prog-label">Pregunta {{step+1}} de 5</span>
+      <div class="prog-dots">
+        <div v-for="i in 5" :key="i" class="pdot" :class="{done:i-1<step,active:i-1===step}"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTRO -->
+  <transition name="fade" mode="out-in">
+  <div class="screen" v-if="phase==='intro'" key="intro">
+    <div class="inner">
+      <div class="intro-eyebrow">Enquesta de preferències · AURA SS25</div>
+      <h1 class="intro-h1">Ajuda'ns a crear<br>la col·lecció <em>perfecta</em></h1>
+      <p class="intro-sub">Som una marca de moda minimalista i volem entendre millor les preferències dels nostres clients.<br><br>Respondre les 5 preguntes breus d'aquesta enquesta ens ajudarà a millorar la nostra propera col·lecció. No hi ha respostes correctes ni incorrectes. Tria simplement el que et sembli més atractiu.</p>
+      <div class="actions">
+        <button class="btn-main" @click="phase='steps'; startCd()">Comença l'enquesta</button>
+      </div>
+      <p class="intro-note">Durada: ~2 minuts · Totalment anònim</p>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="screen" v-else-if="phase==='steps'" :key="'s'+step">
+    <div class="inner">
+
+      <!-- STEP 0: STORYTELLING -->
+      <template v-if="step===0">
+        <div class="step-meta">Pregunta 1 · Comunicació de producte</div>
+        <h2 class="step-q">Quin d'aquests textos et sembla més convincent per descriure un blazer?</h2>
+        <p class="step-hint">Llegeix les dues opcions i tria la que et resulti més atractiva per a un producte de moda.</p>
+        <div class="opts opts-2">
+          <div class="opt" :class="{selected:ans[0]==='A'}" @click="select(0,'A')">
+            <div class="opt-tag">Opció A — Descripció tècnica</div>
+            <div class="opt-text" style="margin-top:8px">Blazer oversize en lli natural. Tall clàssic. Colors: camel, negre i gris. Composició: 85% lli, 15% cotó orgànic. Talla disponible: S a XL. Rentat a mà.</div>
+          </div>
+          <div class="opt" :class="{selected:ans[0]==='B'}" @click="select(0,'B')">
+            <div class="opt-tag">Opció B — Descripció emocional</div>
+            <div class="opt-text" style="margin-top:8px;font-style:italic;font-family:var(--fd);font-size:15px;line-height:1.9">"Una peça que no passa desapercebuda. Cada cop que la portes, estàs dient alguna cosa sobre tu sense dir res. Per als que han deixat d'intentar encaixar."</div>
+          </div>
+        </div>
+      </template>
+
+      <!-- STEP 1: SOCIAL PROOF -->
+      <template v-if="step===1">
+        <div class="step-meta">Pregunta 2 · Selecció de producte</div>
+        <h2 class="step-q">Quin d'aquests dos pantalons t'agrada més per comprar?</h2>
+        <p class="step-hint">Tria el que et generi més confiança. Són el mateix model i material.</p>
+        <div class="opts opts-2" style="gap:3px">
+          <div class="pcard-wrap" :class="{selected:ans[1]==='A'}" @click="select(1,'A')">
+            <div class="pcheck">✓</div>
+            <div class="pimg"><div class="garment-s garment-b"></div></div>
+            <div class="pdata">
+              <div class="pdata-name">Pantaló Wide Leg</div>
+              <div class="pdata-mat">Linen Blend · Navy</div>
+              <div class="price-row"><span class="price-now">€ 59</span></div>
+            </div>
+          </div>
+          <div class="pcard-wrap" :class="{selected:ans[1]==='B'}" @click="select(1,'B')">
+            <div class="pcheck">✓</div>
+            <div class="pimg">
+              <div class="garment-s garment-b"></div>
+              <div class="pimg-badge">MÉS VENUT</div>
+            </div>
+            <div class="pdata">
+              <div class="pdata-name">Pantaló Wide Leg</div>
+              <div class="pdata-mat">Linen Blend · Navy</div>
+              <div class="price-row"><span class="price-now">€ 59</span></div>
+              <div class="social-block">
+                <div><span class="social-stars">★★★★★</span><span class="social-count">1.247 valoracions</span></div>
+                <div class="social-badge">97% el recomanarien</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- STEP 2: PRICE ANCHORING -->
+      <template v-if="step===2">
+        <div class="step-meta">Pregunta 3 · Valoració de preu</div>
+        <h2 class="step-q">Com valores el preu d'aquesta jaqueta?</h2>
+        <p class="step-hint">Observa el producte i indica com perceps el seu preu actual.</p>
+        <div class="fomo-product" style="margin-bottom:20px">
+          <div class="fpname">Jaqueta Biker Premium</div>
+          <div class="fpsub">Cuir vegà · Unisex · Negre mat</div>
+          <div class="price-row">
+            <span class="price-was">€ 189</span>
+            <span class="price-now">€ 69</span>
+            <span class="price-disc">−63%</span>
+          </div>
+        </div>
+        <div class="opts opts-3">
+          <div class="opt" :class="{selected:ans[2]==='car'}" @click="select(2,'car')">
+            <div class="opt-tag">Opció A</div>
+            <div class="opt-big" style="color:var(--red)">Massa car</div>
+            <div class="opt-text">€69 és un preu elevat per a una jaqueta de cuir vegà.</div>
+          </div>
+          <div class="opt" :class="{selected:ans[2]==='ok'}" @click="select(2,'ok')">
+            <div class="opt-tag">Opció B</div>
+            <div class="opt-big" style="color:var(--gold)">Raonable</div>
+            <div class="opt-text">El preu és adequat tenint en compte la qualitat del material.</div>
+          </div>
+          <div class="opt" :class="{selected:ans[2]==='ganga'}" @click="select(2,'ganga')">
+            <div class="opt-tag">Opció C</div>
+            <div class="opt-big" style="color:var(--grn)">Una ganga</div>
+            <div class="opt-text">€69 és molt barat per a una jaqueta d'aquesta categoria.</div>
+          </div>
+        </div>
+      </template>
+
+      <!-- STEP 3: FOMO -->
+      <template v-if="step===3">
+        <div class="step-meta">Pregunta 4 · Decisió de compra</div>
+        <h2 class="step-q">La botiga t'envia una oferta especial. Compraries ara o esperaries?</h2>
+        <p class="step-hint">Observa la situació de compra i indica quina seria la teva decisió real.</p>
+        <div class="cd-block">
+          <div class="cd-label">Oferta flash — finalitza en</div>
+          <div class="cd-units">
+            <div class="cdu"><span class="cdu-num">{{pad(cd.h)}}</span><div class="cdu-lbl">Hores</div></div>
+            <span class="cdsep">:</span>
+            <div class="cdu"><span class="cdu-num">{{pad(cd.m)}}</span><div class="cdu-lbl">Min</div></div>
+            <span class="cdsep">:</span>
+            <div class="cdu"><span class="cdu-num">{{pad(cd.s)}}</span><div class="cdu-lbl">Seg</div></div>
+          </div>
+        </div>
+        <div class="fomo-product">
+          <div class="fpname">Blazer Oversize SS25</div>
+          <div class="fpsub">Lli natural · Camel</div>
+          <div class="price-row">
+            <span class="price-was">€ 129</span>
+            <span class="price-now">€ 39</span>
+            <span class="price-disc">−70%</span>
+          </div>
+          <div class="stk-text">Sols queden 2 unitats en estoc</div>
+          <div class="stk-bar"><div class="stk-fill"></div></div>
+          <div class="viewers-row"><span class="ldot"></span>{{viewers}} persones veient aquest producte ara</div>
+        </div>
+        <div class="opts opts-2" style="margin-top:3px">
+          <div class="opt" :class="{selected:ans[3]==='ara'}" @click="select(3,'ara')">
+            <div class="opt-tag">Opció A</div>
+            <div class="opt-big" style="color:var(--gold)">Compraria ara</div>
+            <div class="opt-text">No vull arriscar-me a perdre l'oferta ni que s'esgotin.</div>
+          </div>
+          <div class="opt" :class="{selected:ans[3]==='espero'}" @click="select(3,'espero')">
+            <div class="opt-tag">Opció B</div>
+            <div class="opt-big" style="color:var(--off)">Esperaria</div>
+            <div class="opt-text">Preferiria pensar-ho millor i no deixar-me portar per la urgència.</div>
+          </div>
+        </div>
+      </template>
+
+      <!-- STEP 4: COLOR PSYCHOLOGY -->
+      <template v-if="step===4">
+        <div class="step-meta">Pregunta 5 · Disseny de botiga</div>
+        <h2 class="step-q">Quin disseny de botiga en línia t'inspira més confiança?</h2>
+        <p class="step-hint">El contingut és idèntic. Tria el disseny que et sembli més atractiu i fiable per comprar roba.</p>
+        <div class="palettes">
+          <div class="pal-opt" :class="{selected:ans[4]==='A'}" @click="select(4,'A')">
+            <div class="pal-preview pal-a">
+              <div class="pal-logo pal-logo-a">AURA</div>
+              <span class="pal-btn pal-btn-a">Compra ara</span>
+            </div>
+            <div class="pal-name">Disseny A — Fosc / Daurat</div>
+          </div>
+          <div class="pal-opt" :class="{selected:ans[4]==='B'}" @click="select(4,'B')">
+            <div class="pal-preview pal-b">
+              <div class="pal-logo pal-logo-b">AURA</div>
+              <span class="pal-btn pal-btn-b">Compra ara</span>
+            </div>
+            <div class="pal-name">Disseny B — Clar / Neutre</div>
+          </div>
+        </div>
+      </template>
+
+      <!-- NAVIGATION -->
+      <div class="actions">
+        <button class="btn-sec" v-if="step>0" @click="prevStep">Enrere</button>
+        <button class="btn-main" v-if="step<4" :disabled="!ans[step]" @click="nextStep">Continua</button>
+        <button class="btn-main" v-if="step===4" :disabled="!ans[4]" @click="showReveal">Veure resultats</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVEAL -->
+  <div class="reveal-wrap" v-else-if="phase==='reveal'" key="reveal">
+    <div class="reveal-header">
+      <div class="rev-eyebrow">Resultat de l'experiment</div>
+      <h1 class="rev-h1">Has estat <em>influenciat</em><br>sense saber-ho.</h1>
+      <p class="rev-sub">Aquesta no era una enquesta de preferències. Era un experiment de neuromàrqueting dissenyat per al Treball de Recerca d'un estudiant de Batxillerat. Cada pregunta amagava una tècnica de persuasió basada en neurociència. Descobreix com t'han influenciat.</p>
+      <div class="score-block">
+        <div class="score-num">{{score}}</div>
+        <div>
+          <div class="score-of">de 5 tècniques</div>
+          <div class="score-label">han condicionat les teves respostes de manera previsible.<br>{{scoreMsg}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal-cards">
+      <div class="rcard" v-for="(c,i) in cards" :key="i" :style="{animationDelay:(i*.08)+'s',animation:'rowin .5s ease both'}">
+        <div class="rcard-head" @click="toggle(i)">
+          <div class="ricn" :style="{background:c.color+'22',color:c.color}">{{i+1}}</div>
+          <div class="rcard-title">
+            <div class="rcard-name" :style="{color:c.influenced?'var(--wh)':'var(--mut)'}">{{c.title}}</div>
+            <div class="rcard-sub">{{c.subtitle}}</div>
+          </div>
+          <span :class="c.influenced ? 'tag-inf' : 'tag-neu'">{{c.influenced ? 'Influenciat' : 'Resistent'}}</span>
+          <span class="chev" :class="{open:openCard===i}">▼</span>
+        </div>
+        <div class="rcard-body" v-if="openCard===i">
+          <div class="rb-your-lbl">La teva resposta</div>
+          <div class="rb-your-val">"{{c.userAns}}"</div>
+          <p class="rb-explain">{{c.explain}}</p>
+          <div class="rb-bar-wrap">
+            <div class="rb-bar-lbl"><span>Efectivitat global d'aquesta tècnica</span><span>{{c.pct}}%</span></div>
+            <div class="rb-bar"><div class="rb-bar-fill" :style="{background:c.color,'--w':c.pct+'%',width:'0%'}"></div></div>
+            <div class="rb-ref">Font: {{c.ref}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="final-box">
+      <div class="fb-lbl">Conclusió del treball de recerca</div>
+      <p class="fb-txt">"El neuromàrqueting demostra que el 95% de les decisions de compra es prenen de manera inconscient. No és manipulació: és comprendre com funciona el cervell i dissenyar experiències que hi connectin."</p>
+      <div style="font-size:10px;color:var(--mut);margin-top:14px;letter-spacing:1px">Gerald Zaltman, Harvard Business School</div>
+      <button class="restart-btn" @click="restart">Tornar a fer l'experiment</button>
+    </div>
+  </div>
+  </transition>
+
+</div>
+
+<script>
+const {createApp} = Vue;
+createApp({
+  data(){
+    return {
+      phase:'intro',
+      step:0,
+      ans:{0:null,1:null,2:null,3:null,4:null},
+      openCard:0,
+      cd:{h:1,m:47,s:33},
+      viewers:143,
+      cdTimer:null,
+      vTimer:null,
+    }
+  },
+  computed:{
+    score(){return this.cards.filter(c=>c.influenced).length},
+    scoreMsg(){
+      const s=this.score;
+      if(s===5)return 'Resultat màxim. El cervell humà segueix patrons molt previsibles.';
+      if(s>=3)return 'Resultat típic. La majoria de persones mostren el mateix patró.';
+      if(s>=1)return 'Ets relativament resistent a algunes tècniques, però no totes.';
+      return 'Resultat inusual. Tens una alta resistència a la persuasió.';
+    },
+    cards(){
+      const a=this.ans;
+      return [
+        {
+          title:'Storytelling Emocional',
+          subtitle:'Pregunta 1 — Descripció de producte',
+          color:'#7C3AED',
+          influenced:a[0]==='B',
+          userAns:a[0]==='B' ? 'Opció B — text emocional / narratiu' : 'Opció A — descripció tècnica',
+          explain:a[0]==='B'
+            ? 'Has triat la descripció emocional. Exactament com el neuromàrqueting prediu. El text narratiu activa el sistema límbic — la part emocional del cervell — mentre que la descripció tècnica activa el neocòrtex racional. El cervell humà processa les narratives 22 vegades més ràpid que les dades, i les decisions de compra es prenen al sistema límbic. Per això les marques de luxe eviten llistes de característiques i escriuen com si et parlessin a tu directament.'
+            : 'Has triat la descripció tècnica. Ets de les persones que prefereix informació objectiva i verificable. Tot i que el storytelling és molt efectiu en general, alguns consumidors — especialment els que processen de manera més analítica — responen millor a la concreció. Curiosament, fins i tot en aquest cas el teu cervell ha comparat les dues opcions usant el sistema límbic per decidir.',
+          pct:78,
+          ref:'Harvard Business School, Gerald Zaltman (2003)'
+        },
+        {
+          title:'Prova Social',
+          subtitle:'Pregunta 2 — Selecció de producte idèntic',
+          color:'#059669',
+          influenced:a[1]==='B',
+          userAns:a[1]==='B' ? 'Opció B — producte amb valoracions i badge "Més venut"' : 'Opció A — producte sense informació social',
+          explain:a[1]==='B'
+            ? 'Has escollit el producte amb 1.247 valoracions i el badge "Més venut" — i eren EXACTAMENT el mateix producte. La prova social activa el que els neurocientífics anomenen "cognició social": el cervell interpreta la validació col·lectiva com una reducció del risc percebut. L\'amígdala, que gestiona la por i el risc, es desactiva quan veiem que molta altra gent ja ha pres la mateixa decisió. Les plataformes com Amazon o Booking ho usen en cada producte.'
+            : 'Has triat el producte sense informació social. Ets resistent a la prova social en format de valoracions i badges. Pot indicar una preferència per prendre decisions independents o desconfiança cap a les puntuacions en línia — una actitud cada cop més comuna entre consumidors experients.',
+          pct:82,
+          ref:'Nielsen Consumer Neuroscience (2015)'
+        },
+        {
+          title:'Ancoratge de Preus',
+          subtitle:'Pregunta 3 — Percepció del preu €69',
+          color:'#D97706',
+          influenced:a[2]==='ok'||a[2]==='ganga',
+          userAns:a[2]==='car' ? 'Massa car' : a[2]==='ok' ? 'Raonable' : 'Una ganga',
+          explain:(a[2]==='ok'||a[2]==='ganga')
+            ? 'Has considerat €69 com a raonable o una ganga. Però sense el preu €189 tatxat, la mateixa jaqueta a €69 se sol percebre com a cara. El preu original crea un "ancoratge mental": el primer número que veu el cervell es converteix en la referència i tot s\'avalua relativament. Daniel Kahneman (Nobel d\'Economia 2002) va demostrar que el cervell no avalua els preus en termes absoluts, sinó sempre comparant amb un punt de referència — real o artificalment construït.'
+            : 'Has considerat €69 massa car. En aquest cas el teu cervell ha resistit l\'efecte ancoratge — potser per experiència prèvia amb preus similars o per un processat més analític del valor real del producte. Tot i així, la majoria de persones en el teu lloc haguessin dit "raonable" o "ganga" simplement per la presència del €189 tatxat.',
+          pct:73,
+          ref:'Kahneman & Tversky, Prospect Theory (1979)'
+        },
+        {
+          title:'FOMO — Por a Perdre',
+          subtitle:'Pregunta 4 — Oferta amb compte enrere',
+          color:'#DC2626',
+          influenced:a[3]==='ara',
+          userAns:a[3]==='ara' ? 'Compraria ara — no vull perdre l\'oferta' : 'Esperaria — evitaria la urgència artificial',
+          explain:a[3]==='ara'
+            ? 'Compraries ara. La combinació de compte enrere + "2 unitats" + "143 persones veient" ha activat el teu sistema d\'alarma. L\'amígdala detecta l\'escassetat com una amenaça i genera una resposta d\'urgència que bypassa el neocòrtex racional. El FOMO (Fear Of Missing Out) és una de les tècniques més potents del neuromàrqueting digital: plataformes com Booking.com, Amazon o Zalando la usen sistemàticament. Curiosament, la investigació mostra que el cervell s\'activa més durant l\'ANTICIPACIÓ de la pèrdua que durant la pèrdua mateixa.'
+            : 'Esperaries — resistiràs la pressió d\'urgència. Ets conscient de les tàctiques de FOMO o tens una alta tolerància a la pressió temporal. Tot i això, cal tenir en compte que en una situació real (no un experiment), amb diners reals i un producte desitjat, la resposta podria ser diferent. El cansament de decisió al final del dia també augmenta la susceptibilitat al FOMO.',
+          pct:69,
+          ref:'Cialdini, Influence: The Psychology of Persuasion (1984)'
+        },
+        {
+          title:'Psicologia del Color',
+          subtitle:'Pregunta 5 — Disseny fosc/daurat vs clar/neutre',
+          color:'#2563EB',
+          influenced:a[4]==='A',
+          userAns:a[4]==='A' ? 'Disseny A — fosc i daurat (luxe)' : 'Disseny B — clar i neutre',
+          explain:a[4]==='A'
+            ? 'Has triat el disseny fosc amb daurats. Exactament la paleta dissenyada per activar associacions de luxe, exclusivitat i qualitat premium. El negre comunica elegància i sofisticació; el daurat activa les mateixes regions cerebrals associades al valor i la recompensa. Les marques de moda premium (Chanel, Saint Laurent, Bottega Veneta) usen paletes similars deliberadament. La investigació en neuroimatge mostra que el color pot determinar fins a un 85% de les decisions de compra en la primera impressió.'
+            : 'Has triat el disseny clar i neutre. Interessant — les paletes clares s\'associen a minimalisme, honestedat i accessibilitat. Marques com COS, Muji o Arket usen paletes similars per transmetre autenticitat i transparència en lloc de luxe. La teva preferència pot indicar que valores la simplicitat i la llegibilitat per sobre de l\'estatus aspiracional.',
+          pct:66,
+          ref:'Singh, "Impact of color on marketing" (2006)'
+        },
+      ]
+    }
+  },
+  methods:{
+    select(step,val){this.ans[step]=val},
+    nextStep(){if(this.ans[this.step])this.step++},
+    prevStep(){if(this.step>0)this.step--},
+    showReveal(){this.phase='reveal';window.scrollTo({top:0,behavior:'smooth'});clearInterval(this.cdTimer);clearInterval(this.vTimer)},
+    restart(){this.phase='intro';this.step=0;this.ans={0:null,1:null,2:null,3:null,4:null};this.openCard=0;window.scrollTo({top:0,behavior:'smooth'})},
+    toggle(i){this.openCard=this.openCard===i?null:i},
+    startCd(){
+      this.cdTimer=setInterval(()=>{
+        if(this.cd.s>0){this.cd.s--}
+        else if(this.cd.m>0){this.cd.m--;this.cd.s=59}
+        else if(this.cd.h>0){this.cd.h--;this.cd.m=59;this.cd.s=59}
+      },1000);
+      this.vTimer=setInterval(()=>{
+        this.viewers=Math.max(90,Math.min(200,this.viewers+(Math.random()>.5?1:-1)));
+      },3000);
+    },
+    pad(n){return String(n).padStart(2,'0')},
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
